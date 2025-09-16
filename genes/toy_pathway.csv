@@ -1,0 +1,3 @@
+gene_symbol,gene_name,module,annotation,evidence_source,weight
+GeneA,Example gene A,core node,core component for demonstration,KEGG:demo; Reactome:demo,0.5
+GENEC,Example gene C,core node,core component for demonstration,KEGG:demo; Reactome:demo,0.5

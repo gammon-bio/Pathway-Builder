@@ -1,0 +1,28 @@
+# OS artifacts
+.DS_Store
+
+# Python cache
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Build artifacts
+*.egg-info/
+
+# Outputs
+/out/
+
+# Large data (not tracked)
+/data/GSE272085/
+/data/sc_toy/
+/data/cu25/
+/data/*.tar
+
+# Figures (Scanpy default)
+figures/
+
+# Conda intermediate files
+/env/condaenv.*.requirements.txt
+
+# Accidental nested project dir
+/pathway-builder-starter/

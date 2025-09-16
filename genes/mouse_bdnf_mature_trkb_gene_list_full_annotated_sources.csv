@@ -1,0 +1,13 @@
+gene_symbol,gene_name,module,annotation,evidence_source,weight
+Ntrk2,Neurotrophic receptor tyrosine kinase 2 (TrkB),receptor,core: TrkB receptor,KEGG:mmu04722; Reactome:NTRK signaling,1.0
+Shc1,Src homology 2 domain containing transforming protein 1,adaptor,core adaptor: Trk adaptor,Reactome:NTRK signaling,0.8
+Grb2,Growth factor receptor-bound protein 2,adaptor,core adaptor: Grb2,Reactome:NTRK signaling,0.8
+Gab1,GRB2-associated-binding protein 1,adaptor,extended adaptor: Gab1,Reactome:NTRK signaling,0.6
+Plcg1,Phospholipase C gamma 1,lipase,core effector: PLCγ1,KEGG:mmu04722; Reactome:NTRK signaling,0.9
+Mapk1,Mitogen-activated protein kinase 1 (ERK2),kinase,core kinase: MAPK/ERK,KEGG:mmu04010; Reactome:MAPK cascade,0.9
+Mapk3,Mitogen-activated protein kinase 3 (ERK1),kinase,core kinase: MAPK/ERK,KEGG:mmu04010; Reactome:MAPK cascade,0.9
+Creb1,cAMP response element-binding protein 1,transcription factor,core TF: CREB,Reactome:NTRK signaling,0.9
+Pik3ca,PI3K catalytic subunit alpha,kinase,PI3K/AKT arm,KEGG:mmu04151; Reactome:PI3K cascade,0.7
+Akt1,AKT serine/threonine kinase 1,kinase,PI3K/AKT arm,KEGG:mmu04151; Reactome:PI3K cascade,0.7
+Eif4ebp1,Eukaryotic translation initiation factor 4E-binding protein 1,translation,core effector: mTORC1 branch,Reactome:NTRK signaling,0.6
+Rps6kb1,Ribosomal protein S6 kinase beta-1 (S6K1),kinase,core effector: mTORC1 branch,KEGG:mmu04151,0.6

@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pathway-builder"
+version = "0.1.0"
+description = "Weighted pathway scoring for bulk and single-cell RNA-seq"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "Proprietary"}
+authors = [
+  {name = "Caleb Gammon"}
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "numpy<2",
+  "pandas>=1.5,<3",
+]
+
+[project.optional-dependencies]
+singlecell = [
+  "anndata>=0.10",
+  "scanpy>=1.9.6",
+  "matplotlib>=3.7",
+]
+report = [
+  "matplotlib>=3.7",
+  "scipy>=1.9",
+  "statsmodels>=0.14",
+]
+test = [
+  "pytest>=7",
+]
+
+[project.scripts]
+pathway-score = "pathway_builder.cli:main"
+
+[tool.setuptools]
+packages = ["pathway_builder"]

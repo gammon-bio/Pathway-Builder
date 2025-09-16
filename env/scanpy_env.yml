@@ -1,0 +1,25 @@
+name: bdnf-snrna
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy=1.26.4
+  - scipy=1.11.4
+  - pandas=2.2.*
+  - h5py=3.10.*
+  - scikit-learn=1.4.*
+  - scanpy=1.9.8
+  - anndata=0.10.8
+  - numba=0.59.*
+  - umap-learn=0.5.5
+  - pynndescent=0.5.11
+  - python-igraph
+  - louvain
+  - leidenalg
+  - matplotlib=3.8.*
+  - ipykernel
+  - jupyterlab
+  - pip
+  - pip:
+      - requests
+      - tqdm
