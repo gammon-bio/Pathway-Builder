@@ -1,8 +1,18 @@
 **Pathway Builder**
 
+[![CI](https://github.com/gammon-bio/Pathway-Builder/actions/workflows/ci.yml/badge.svg)](https://github.com/gammon-bio/Pathway-Builder/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.9%20|%203.10%20|%203.11%20|%203.12-blue)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 - Purpose: Compute weighted pathway scores for bulk RNA-seq or single-cell/nucleus RNA-seq using a simple, file-driven workflow or a Python API.
 - Inputs: One or more pathway CSV files with columns `gene` and `weight` (case-insensitive). For bulk, default scoring is R-style (per-gene z-score across samples, then a weighted mean with optional KEGG/Reactome evidence boost).
 - Outputs: CSVs with weighted scores (per sample for bulk; per celltype/condition for single-cell). Optional figures when using the reference scripts.
+
+**Getting Started**
+
+- One‑liner (toy bulk demo and validation):
+  - `make setup && make toy-bulk && make check OUT=out/toy-bulk`
+- Examples and datasets: see `docs/examples.md`.
 
 **Setup**
 

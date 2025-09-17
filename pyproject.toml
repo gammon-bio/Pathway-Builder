@@ -8,13 +8,18 @@ version = "0.1.0"
 description = "Weighted pathway scoring for bulk and single-cell RNA-seq"
 readme = "README.md"
 requires-python = ">=3.9"
-license = {text = "Proprietary"}
+license = {text = "MIT"}
 authors = [
   {name = "Caleb Gammon"}
 ]
 classifiers = [
+  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Operating System :: OS Independent",
 ]
 dependencies = [
@@ -39,6 +44,10 @@ test = [
 
 [project.scripts]
 pathway-score = "pathway_builder.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/gammon-bio/Pathway-Builder"
+Repository = "https://github.com/gammon-bio/Pathway-Builder"
 
 [tool.setuptools]
 packages = ["pathway_builder"]
