@@ -235,3 +235,11 @@ Tips:
 
 - Bulk: `scores_bulk.csv` with columns: `pathway, sample, score_w`.
 - Single-cell: `scores_sc_by_celltype.csv` with columns: `celltype, condition, score_w__<LABEL>`.
+
+**Common Errors**
+
+- Gene column not found: The tool auto-detects `gene`, `symbol`, `gene_symbol`, etc. If your counts file uses a different name (or the first column isn’t genes), pass `--gene_col <name>`.
+- Unmatched `--sample_info` samples: If some samples in `scores_bulk.csv` aren’t present in your sample info sheet (or vice versa), you’ll see a warning. Ensure the `sample` IDs in `--sample_info` exactly match the column names in your counts table (after gene column removal).
+- No files matched for `--sn_data`: Quote globs to avoid shell expansion (`SN_DATA='data/sc/*.h5'`). Supported inputs: 10x `.h5`, 10x matrix dir, or `.h5ad`.
+- Pathway CSV schema: Requires `gene` (or `gene_symbol`) and `weight`. If `weight` is missing, it defaults to `1.0`. Gene matching is case-insensitive; missing genes are ignored and weights re-normalize.
+- No genes matched: If zero pathway genes match your dataset, scores are `0.0`. Check species/symbols and case. For bulk, ensure your counts table gene symbols match the pathway list.

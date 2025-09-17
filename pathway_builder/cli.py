@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import os
 from typing import Optional, Sequence
+import sys
 
 from .core import (
     _is_tsv_or_csv,
@@ -83,6 +84,26 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
             if args.sample_col not in si.columns or args.treatment_col not in si.columns:
                 raise SystemExit(f"--sample_info must contain columns: {args.sample_col},{args.treatment_col}")
             si2 = si[[args.sample_col, args.treatment_col]].rename(columns={args.sample_col: "sample", args.treatment_col: "treatment"})
+            # Warn on unmatched samples between scores and sample_info
+            score_samples = set(scores["sample"].astype(str).unique())
+            info_samples = set(si2["sample"].astype(str).unique())
+            missing_in_info = sorted(score_samples - info_samples)
+            extra_in_info = sorted(info_samples - score_samples)
+            if missing_in_info:
+                msg = (
+                    f"Warning: {len(missing_in_info)} sample(s) in results are missing from --sample_info: "
+                    + ", ".join(missing_in_info[:10])
+                    + (" …" if len(missing_in_info) > 10 else "")
+                )
+                print(msg, file=sys.stderr)
+            if extra_in_info:
+                msg = (
+                    f"Warning: {len(extra_in_info)} sample(s) in --sample_info not found in results: "
+                    + ", ".join(extra_in_info[:10])
+                    + (" …" if len(extra_in_info) > 10 else "")
+                )
+                print(msg, file=sys.stderr)
+
             scores = scores.merge(si2, on="sample", how="left")
             scores.to_csv(os.path.join(args.output_dir, "scores_bulk_with_treatment.csv"), index=False)
             # Generate PDF unless disabled
@@ -99,6 +120,13 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
                 if ctrl is None:
                     levels = list(scores["treatment"].dropna().unique())
                     ctrl = _infer_control_label(levels)
+                else:
+                    levels = set(scores["treatment"].dropna().astype(str).unique())
+                    if ctrl not in levels and len(levels) > 0:
+                        print(
+                            f"Warning: --control_label '{ctrl}' not found in treatments: " + ", ".join(sorted(levels)),
+                            file=sys.stderr,
+                        )
                 make_bulk_pdf_report(scores_with_treatment=scores, output_pdf_path=pdf_path, methods_note=methods_note, control_label=ctrl, style=args.report_style)
         out.to_csv(os.path.join(args.output_dir, "scores_bulk.csv"), index=False)
     else:
