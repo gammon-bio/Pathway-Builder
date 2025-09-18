@@ -7,7 +7,7 @@ _Date: 2025-09-18 12:06 MDT_
 - **Formatting / lint / types**: ⚠️ Tooling still unavailable in the sandbox, but `pip install -e '.[dev]'` now installs `black`, `isort`, `flake8`, `mypy`, plus security/static tools for local or CI use.
 - **Security scanning**: ⚠️ `pip-audit` and `bandit` missing in sandbox; available via the updated dev extras.
 - **Static analysis**: ⚠️ `radon`/`vulture` not present in sandbox; installable through the dev extras.
-- **Smoke test**: ⚠️ Sandbox `make toy-bulk` still segfaults (likely due to missing deps); recipe now forces simple scoring, `--no_pdf`, and checks for numpy/pandas before running. Confirm on CI runners.
+- **Smoke test**: ⚠️ Sandbox `make toy-bulk` still segfaults; the target now provisions a `.venv`, installs `.[dev]`, runs simple scoring with `--no_pdf`, and checks numpy/pandas first. Confirm on CI runners.
 
 ## Test & Coverage Notes
 ```
@@ -57,7 +57,7 @@ Latest successful host run (79.70% total):
 
 ### P1 (Should fix soon)
 1. **Ensure toy bulk smoke test runs in CI-quality environments**  \
-   *Rationale*: Segfault in the sandbox still blocks automated validation; the Makefile now uses simple scoring, `--no_pdf`, and blocks early when numpy/pandas are missing, but CI runners need verification.  \
+   *Rationale*: Segfault in the sandbox still blocks automated validation; the target now provisions `.venv`, installs `.[dev]`, enforces simple scoring/`--no_pdf`, and checks dependencies, but CI runners need verification.  \
    *Suggested action*: Confirm on GitHub Actions; if failures persist, add dependency guards or a fallback smoke target.  \
    *Follow-up*: `make toy-bulk` then `pytest tests/test_cli_entrypoint.py -q`.
 

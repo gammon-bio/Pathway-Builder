@@ -39,8 +39,8 @@
 **Quick Start**
 
 - Bulk (genes x samples table)
-  - Install extras: `pip install -e '.[dev]'`
-  - Toy example: `make toy-bulk` (writes to `out/toy-bulk`; validates required deps)
+  - Toy example: `make toy-bulk` (auto-creates `.venv`, installs `.[dev]`, writes to `out/toy-bulk`)
+  - Activate the env for ongoing work: `source .venv/bin/activate`
   - Validate outputs: `make check OUT=out/toy-bulk`
   - Quick lint/type sweep: `black --check . && isort --check . && flake8 . && mypy .`
 
