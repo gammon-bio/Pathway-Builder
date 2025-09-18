@@ -13,7 +13,7 @@
 > **Quick Start**
 >
 > ```bash
-> pip install -e .[dev]
+> pip install -e '.[dev]'   # quote extras on zsh to avoid globbing
 > make toy-bulk
 > ```
 >
@@ -21,7 +21,7 @@
 
 **Getting Started**
 
-- Install development extras: `pip install -e .[dev]`
+- Install development extras: `pip install -e '.[dev]'` (quote extras in zsh)
 - One‑liner (toy bulk demo and validation):
   - `make toy-bulk && make check OUT=out/toy-bulk`
 - Examples and datasets: see `docs/examples.md`.
@@ -39,7 +39,7 @@
 **Quick Start**
 
 - Bulk (genes x samples table)
-  - Install extras: `pip install -e .[dev]`
+  - Install extras: `pip install -e '.[dev]'`
   - Toy example: `make toy-bulk` (writes to `out/toy-bulk`)
   - Validate outputs: `make check OUT=out/toy-bulk`
 
