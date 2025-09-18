@@ -49,6 +49,14 @@ dev = [
   "scipy>=1.9",
   "statsmodels>=0.14",
   "build>=1.0",
+  "black>=23",
+  "isort>=5",
+  "flake8>=6",
+  "mypy>=1.5",
+  "pip-audit>=2",
+  "bandit>=1.7",
+  "radon>=6",
+  "vulture>=2",
 ]
 
 [project.scripts]

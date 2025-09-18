@@ -19,6 +19,13 @@ Thanks for your interest in improving Pathway Builder! A few guidelines:
 - Unit tests with coverage (writes `coverage.xml`):
   - `pytest --cov=pathway_builder --cov-report=xml:coverage.xml --cov-report=term-missing`
 - Regenerate the toy outputs after changes that touch scoring: `make toy-bulk`
+- Lint/type checks: `black --check .`, `isort --check .`, `flake8 .`, `mypy .`
+
+## Security & static analysis
+
+- Dependency audit: `pip-audit`
+- Security lint: `bandit -r pathway_builder`
+- Complexity / dead code: `radon cc pathway_builder -s`, `vulture pathway_builder`
 
 ## Branch naming
 

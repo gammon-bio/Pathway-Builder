@@ -42,6 +42,7 @@
   - Install extras: `pip install -e '.[dev]'`
   - Toy example: `make toy-bulk` (writes to `out/toy-bulk`)
   - Validate outputs: `make check OUT=out/toy-bulk`
+  - Quick lint/type sweep: `black --check . && isort --check . && flake8 . && mypy .`
 
 **Cheat Sheet**
 
@@ -50,11 +51,13 @@
 - Run toy bulk: `make toy-bulk`
 - Validate any bulk run: `make check OUT=out/my_run`
 - Run your bulk: `make bulk COUNTS=/path/to/counts.tsv PATHWAYS='genes/pw_a.csv genes/pw_b.csv' LABELS='A B' OUT=out/bulk`
-- Run single‑cell: `make sc SN_DATA='data/sc/*.h5' PATHWAYS='genes/pw_a.csv genes/pw_b.csv' LABELS='A B' OUT=out/sc`
+- Run single-cell: `make sc SN_DATA='data/sc/*.h5' PATHWAYS='genes/pw_a.csv genes/pw_b.csv' LABELS='A B' OUT=out/sc`
 - Single‑cell with sample info: `make sc SN_DATA='data/sc/*.h5' PATHWAYS='genes/pw_a.csv' SAMPLE_INFO=data/zhang_sample_info.csv OUT=out/sc`
 - Zhang (download + run): `make sc-zhang`
 - Zhang with sample info: `make sc-zhang-with-info`
 - Validate any SC run: `make sc-check OUT=out/sc`
+
+`make toy-bulk` now runs in "simple" scoring mode with `--no_pdf` so the smoke test avoids heavy plotting dependencies. Use `make bulk ... SCORING_STYLE=r REPORT_STYLE=box` for the full PDF workflow.
 
 **Toy Bulk Example**
 
