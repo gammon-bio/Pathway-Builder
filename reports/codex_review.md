@@ -3,11 +3,11 @@
 _Date: 2025-09-18 12:06 MDT_
 
 ## Summary
-- **Tests & coverage**: ✅ Host run (`pytest --cov=pathway_builder --cov-report=xml:coverage.xml --cov-report=term-missing`) passes all 17 tests in ~3s with total coverage 79.7%. Sandbox still terminates early, so CI should rely on host/runner results.
-- **Formatting / lint / types**: ⚠️ `black`, `isort`, `flake8`, and `mypy` are unavailable here; checks not executed.
-- **Security scanning**: ⚠️ `pip-audit` and `bandit` missing; no vulnerability report generated.
-- **Static analysis**: ⚠️ `radon`/`vulture` absent; no complexity/dead-code metrics collected.
-- **Smoke test**: ⚠️ `make toy-bulk` continues to segfault inside the sandbox (likely missing native deps); needs confirmation on a full environment.
+- **Tests & coverage**: ✅ Host run (`pytest --cov=pathway_builder --cov-report=xml:coverage.xml --cov-report=term-missing`) passes all 17 tests in ~3s with total coverage 79.7%; pytest gate raised to 75%. Sandbox still terminates early, so CI should rely on host/runner results.
+- **Formatting / lint / types**: ⚠️ Tooling still unavailable in the sandbox, but `pip install -e '.[dev]'` now installs `black`, `isort`, `flake8`, `mypy`, plus security/static tools for local or CI use.
+- **Security scanning**: ⚠️ `pip-audit` and `bandit` missing in sandbox; available via the updated dev extras.
+- **Static analysis**: ⚠️ `radon`/`vulture` not present in sandbox; installable through the dev extras.
+- **Smoke test**: ⚠️ Sandbox `make toy-bulk` still segfaults, though the recipe now forces simple scoring with `--no_pdf`; confirm on CI runners.
 
 ## Test & Coverage Notes
 ```
@@ -57,14 +57,13 @@ Latest successful host run (79.70% total):
 
 ### P1 (Should fix soon)
 1. **Ensure toy bulk smoke test runs in CI-quality environments**  \
-   *Rationale*: Segfault in the sandbox blocks automated validation; likely due to optional native deps or heavier Scanpy imports.  \
-   *Suggested action*: Provide a minimal smoke target that skips heavy dependencies when unavailable, or stub optional imports.  \
+   *Rationale*: Segfault in the sandbox still blocks automated validation; the Makefile now runs simple scoring with `--no_pdf`, but CI runners need verification.  \
+   *Suggested action*: Confirm on GitHub Actions; if failures persist, add dependency guards or a fallback smoke target.  \
    *Follow-up*: `make toy-bulk` then `pytest tests/test_cli_entrypoint.py -q`.
 
 2. **Provide formatter / linter / type-checker dependencies**  \
-   *Rationale*: Contributors cannot run hygiene checks without `black`, `isort`, `flake8`, `mypy`.  \
-   *Suggested action*: Extend the `dev` extra (or add a `lint` extra) to include these tools and mention them in docs/CI.  \
-   *Follow-up*: `pip install -e '.[dev]'` then run the four commands.
+   *Status*: ✅ `.[dev]` now installs `black`, `isort`, `flake8`, `mypy`, `pip-audit`, `bandit`, `radon`, `vulture`; docs list the lint/type/security commands.  \
+   *Follow-up*: `pip install -e '.[dev]'` then run the lint/type/security commands locally or in CI.
 
 3. **Continue pushing `core.py` coverage toward ≥80%**  \
    *Rationale*: New tests raised coverage to 76%, but critical helpers (`load_singlecell`, evidence boost branches) remain lightly exercised.  \
