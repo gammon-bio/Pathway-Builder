@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import numpy as np
 import pandas as pd
+import pytest
 
 from pathway_builder import core
 
@@ -78,6 +79,53 @@ def test_load_vst_counts_table_duplicate_handling():
     match_mask = (selected_rows[["sample1", "sample2"]] == expected.values).all(axis=1)
     assert match_mask.any()
 
+
+def test_score_bulk_r_style_handles_label_padding(tmp_path):
+    counts = pd.DataFrame(
+        {
+            "gene": ["A", "B"],
+            "S1": [1.0, 2.0],
+            "S2": [2.0, 4.0],
+        }
+    )
+    pw1 = tmp_path / "first.csv"
+    pw1.write_text("gene,weight\nA,1.0\n")
+    pw2 = tmp_path / "second.csv"
+    pw2.write_text("gene,weight\nC,1.0\n")
+
+    scores = core.score_bulk_r_style_from_table(
+        counts,
+        gene_col="gene",
+        pathway_csvs=[str(pw1), str(pw2)],
+        labels=["FIRST"],
+    )
+
+    first = scores[scores["pathway"] == "FIRST"].sort_values("sample")
+    assert list(first["sample"]) == ["S1", "S2"]
+    assert first["score_w"].tolist() == pytest.approx([-0.7071, 0.7071], rel=1e-3)
+
+    second = scores[scores["pathway"] == "second"].sort_values("sample")
+    assert list(second["sample"]) == ["S1", "S2"]
+    assert second["score_w"].tolist() == [0.0, 0.0]
+
+
+def test_score_bulk_from_table_requires_gene_column(tmp_path):
+    counts = pd.DataFrame(
+        {
+            "Symbol": ["G1", "G2"],
+            "S1": [1, 2],
+            "S2": [3, 4],
+        }
+    )
+    pw = tmp_path / "pw.csv"
+    pw.write_text("gene,weight\nG1,1\n")
+
+    with pytest.raises(ValueError):
+        core.score_bulk_from_table(
+            counts_table=counts,
+            gene_col="gene",
+            pathway_csvs=[str(pw)],
+        )
     try:
         core.load_vst_counts_table(df, collapse="unknown")
     except ValueError as exc:
