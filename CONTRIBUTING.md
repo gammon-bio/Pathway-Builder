@@ -10,11 +10,28 @@ Thanks for your interest in improving Pathway Builder! A few guidelines:
 
 ## Development setup
 
-```
-make setup          # bulk/report extras
-make setup-sc       # single-cell + report extras
-pytest pathway-builder-starter/tests -q
-```
+- Install dev dependencies: `pip install -e .[dev]`
+- Optional: add single-cell extras with `make setup-sc`
+- Run the bundled smoke test once: `make toy-bulk`
+
+## Local testing
+
+- Unit tests with coverage (writes `coverage.xml`):
+  - `pytest --cov=pathway_builder --cov-report=xml:coverage.xml --cov-report=term-missing`
+- Regenerate the toy outputs after changes that touch scoring: `make toy-bulk`
+
+## Branch naming
+
+- Feature work: `feature/<short-desc>`
+- Bug fixes: `bugfix/<short-desc>`
+- Automation chores: `automation/<short-desc>`
+
+## Pull request checklist
+
+- ✅ Tests updated or added
+- ✅ CHANGELOG entry when behavior changes
+- ✅ Docs/tutorials refreshed if user-facing behavior shifts
+- ✅ CI passes (`coverage.xml` uploaded via GitHub Actions)
 
 ## Pathway CSV schema
 
