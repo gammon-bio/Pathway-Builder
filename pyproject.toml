@@ -42,6 +42,14 @@ test = [
   "pytest>=7",
   "pytest-cov>=4",
 ]
+dev = [
+  "pytest>=7",
+  "pytest-cov>=4",
+  "matplotlib>=3.7",
+  "scipy>=1.9",
+  "statsmodels>=0.14",
+  "build>=1.0",
+]
 
 [project.scripts]
 pathway-score = "pathway_builder.cli:main"

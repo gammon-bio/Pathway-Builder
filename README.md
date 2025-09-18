@@ -1,17 +1,29 @@
 **Pathway Builder**
 
+[![PyPI](https://img.shields.io/pypi/v/PACKAGE_NAME.svg)](https://pypi.org/project/PACKAGE_NAME/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/PACKAGE_NAME.svg)](https://pypi.org/project/PACKAGE_NAME/)
+[![Codecov](https://img.shields.io/codecov/c/github/gammon-bio/Pathway-Builder?logo=codecov)](https://app.codecov.io/gh/gammon-bio/Pathway-Builder)
 [![CI](https://github.com/gammon-bio/Pathway-Builder/actions/workflows/ci.yml/badge.svg)](https://github.com/gammon-bio/Pathway-Builder/actions/workflows/ci.yml)
-![Python](https://img.shields.io/badge/python-3.9%20|%203.10%20|%203.11%20|%203.12-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 - Purpose: Compute weighted pathway scores for bulk RNA-seq or single-cell/nucleus RNA-seq using a simple, file-driven workflow or a Python API.
 - Inputs: One or more pathway CSV files with columns `gene` and `weight` (case-insensitive). For bulk, default scoring is R-style (per-gene z-score across samples, then a weighted mean with optional KEGG/Reactome evidence boost).
 - Outputs: CSVs with weighted scores (per sample for bulk; per celltype/condition for single-cell). Optional figures when using the reference scripts.
 
+> **Quick Start**
+>
+> ```bash
+> pip install -e .[dev]
+> make toy-bulk
+> ```
+>
+> Inspect `out/toy-bulk/` for the demo scores and PDF report.
+
 **Getting Started**
 
+- Install development extras: `pip install -e .[dev]`
 - One‑liner (toy bulk demo and validation):
-  - `make setup && make toy-bulk && make check OUT=out/toy-bulk`
+  - `make toy-bulk && make check OUT=out/toy-bulk`
 - Examples and datasets: see `docs/examples.md`.
 
 **Setup**
@@ -26,8 +38,8 @@
 
 **Quick Start**
 
-- Bulk (genes x samples table): prefer the Makefile
-  - Install extras: `make setup`
+- Bulk (genes x samples table)
+  - Install extras: `pip install -e .[dev]`
   - Toy example: `make toy-bulk` (writes to `out/toy-bulk`)
   - Validate outputs: `make check OUT=out/toy-bulk`
 
@@ -162,6 +174,15 @@ SORT1,0.5
 - Bulk:
   - `from pathway_builder.core import score_bulk_from_table`
   - `df_scores = score_bulk_from_table(df_counts, gene_col=None, pathway_csvs=["genes/my_pathway.csv"], labels=["MY_PW"])`
+
+```python
+import pandas as pd
+from pathway_builder.core import score_bulk_from_table
+counts = pd.DataFrame({"gene": ["NTRK2"], "Sample1": [1.0], "Sample2": [2.0]})
+scores = score_bulk_from_table(counts, gene_col="gene", pathway_csvs=["genes/toy_pathway.csv"])
+print(scores.head())
+```
+
 - Single-cell:
   - `from pathway_builder.core import load_singlecell, score_singlecell_adata`
   - `adata = load_singlecell("data/sc/*.h5")`
