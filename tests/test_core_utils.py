@@ -126,12 +126,18 @@ def test_score_bulk_from_table_requires_gene_column(tmp_path):
             gene_col="gene",
             pathway_csvs=[str(pw)],
         )
-    try:
+
+
+def test_load_vst_counts_table_invalid_collapse():
+    df = pd.DataFrame(
+        {
+            "gene": ["A", "A"],
+            "S1": [1, 2],
+            "S2": [2, 3],
+        }
+    )
+    with pytest.raises(ValueError):
         core.load_vst_counts_table(df, collapse="unknown")
-    except ValueError as exc:
-        assert "collapse" in str(exc)
-    else:
-        raise AssertionError("Expected ValueError for unknown collapse option")
 
 
 def test_boost_weights_by_evidence_clips_values():
