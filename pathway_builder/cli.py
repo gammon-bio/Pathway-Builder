@@ -11,6 +11,7 @@ from .core import (
     load_singlecell,
     score_bulk_from_table,
     score_singlecell_adata,
+    read_pathway_csv,
 )
 
 
@@ -47,6 +48,13 @@ def build_parser() -> argparse.ArgumentParser:
     return ap
 
 
+def _resolve_bulk_gene_col(counts_table, requested: Optional[str]) -> str:
+    if requested:
+        return requested
+    cols = {c.lower(): c for c in counts_table.columns}
+    return cols.get("gene") or cols.get("symbol") or list(counts_table.columns)[0]
+
+
 def main(argv: Optional[Sequence[str]] = None) -> None:
     ap = build_parser()
     args = ap.parse_args(argv)
@@ -64,18 +72,53 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         if not _is_tsv_or_csv(args.bulk_counts):
             raise SystemExit("--bulk_counts must be .csv, .tsv, or .txt (genes x samples)")
         df = _read_delim(args.bulk_counts)
+        pathway_csvs = list(args.pathway_csv)
+        labels = list(args.label) if args.label else None
+        resolved_gene_col = _resolve_bulk_gene_col(df, args.gene_col)
+        gene_col_for_match = resolved_gene_col if resolved_gene_col in df.columns else None
+        detected_gene_col = gene_col_for_match or _resolve_bulk_gene_col(df, None)
+        unmatched_pathways = []
+        if gene_col_for_match:
+            present_genes = (
+                df[gene_col_for_match]
+                .astype(str)
+                .str.strip()
+            )
+            present_keys = {g.lower() for g in present_genes if g}
+            for p in pathway_csvs:
+                pw = read_pathway_csv(p)
+                pw_genes = pw["gene"].astype(str).str.strip()
+                has_match = any(g and g.lower() in present_keys for g in pw_genes)
+                if not has_match:
+                    unmatched_pathways.append(os.path.basename(p))
+        if unmatched_pathways:
+            msg = "No pathway genes matched input counts \u2014 check gene column (--gene_col) or provide a gene_map.csv"
+            print(msg, file=sys.stderr)
+            print(
+                f"Detected gene column: '{detected_gene_col}'. Override with --gene_col <column> if needed.",
+                file=sys.stderr,
+            )
+            print(
+                "Pathways with no matches: " + ", ".join(unmatched_pathways),
+                file=sys.stderr,
+            )
         if args.scoring_style == "r":
             from .core import score_bulk_r_style_from_table
             out = score_bulk_r_style_from_table(
                 df,
-                gene_col=args.gene_col,
-                pathway_csvs=list(args.pathway_csv),
-                labels=list(args.label) if args.label else None,
+                gene_col=resolved_gene_col,
+                pathway_csvs=pathway_csvs,
+                labels=labels,
                 collapse=args.collapse_duplicates,
                 boost_by_evidence=not args.no_boost,
             )
         else:
-            out = score_bulk_from_table(df, gene_col=args.gene_col, pathway_csvs=list(args.pathway_csv), labels=list(args.label) if args.label else None)
+            out = score_bulk_from_table(
+                df,
+                gene_col=resolved_gene_col,
+                pathway_csvs=pathway_csvs,
+                labels=labels,
+            )
         # If sample info provided, join and produce summaries + PDF
         scores = out.copy()
         if args.sample_info:
