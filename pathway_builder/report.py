@@ -19,18 +19,24 @@ def _as_wide_table(scores: pd.DataFrame) -> pd.DataFrame:
 def _compute_group_stats(scores: pd.DataFrame, treatment_col: str) -> pd.DataFrame:
     # Per pathway x treatment mean, sd, n, sem
     rows: List[Dict] = []
-    for (pathway, trt), grp in scores.groupby(["pathway", treatment_col], observed=False):
+    for (pathway, trt), grp in scores.groupby(
+        ["pathway", treatment_col], observed=False
+    ):
         vals = grp["score_w"].astype(float).to_numpy()
         n = int(np.isfinite(vals).sum())
         mean = float(np.nanmean(vals)) if n else np.nan
         sd = float(np.nanstd(vals, ddof=1)) if n > 1 else np.nan
         sem = float(sd / np.sqrt(n)) if (n and np.isfinite(sd)) else np.nan
-        rows.append(dict(pathway=pathway, treatment=trt, mean=mean, sd=sd, n=n, sem=sem))
+        rows.append(
+            dict(pathway=pathway, treatment=trt, mean=mean, sd=sd, n=n, sem=sem)
+        )
     return pd.DataFrame(rows)
 
 
-def _welch_stats(scores: pd.DataFrame, treatment_col: str, control_label: Optional[str] = None) -> pd.DataFrame:
-    from .core import welch_t_test, hedges_g
+def _welch_stats(
+    scores: pd.DataFrame, treatment_col: str, control_label: Optional[str] = None
+) -> pd.DataFrame:
+    from .core import hedges_g, welch_t_test
 
     rows: List[Dict] = []
     for pw, grp in scores.groupby("pathway", observed=False):
@@ -43,27 +49,32 @@ def _welch_stats(scores: pd.DataFrame, treatment_col: str, control_label: Option
             a, b = levels[0], levels[1]
         xa = grp.loc[grp[treatment_col] == a, "score_w"].to_numpy()
         xb = grp.loc[grp[treatment_col] == b, "score_w"].to_numpy()
-        t, df, p, mean_diff, ci_low, ci_high = welch_t_test(xb, xa)  # case minus control
+        t, df, p, mean_diff, ci_low, ci_high = welch_t_test(
+            xb, xa
+        )  # case minus control
         g = hedges_g(xb, xa)
-        rows.append(dict(
-            pathway=pw,
-            group_a=a,
-            group_b=b,
-            n_a=int(np.isfinite(xa).sum()),
-            n_b=int(np.isfinite(xb).sum()),
-            mean_diff=mean_diff,
-            t=t,
-            df=df,
-            p=p,
-            ci_low=ci_low,
-            ci_high=ci_high,
-            hedges_g=g,
-            test="welch",
-        ))
+        rows.append(
+            dict(
+                pathway=pw,
+                group_a=a,
+                group_b=b,
+                n_a=int(np.isfinite(xa).sum()),
+                n_b=int(np.isfinite(xb).sum()),
+                mean_diff=mean_diff,
+                t=t,
+                df=df,
+                p=p,
+                ci_low=ci_low,
+                ci_high=ci_high,
+                hedges_g=g,
+                test="welch",
+            )
+        )
     out = pd.DataFrame(rows)
     if not out.empty:
         try:
             from statsmodels.stats.multitest import multipletests
+
             out["q_BH"] = multipletests(out["p"].to_numpy(), method="fdr_bh")[1]
         except Exception:
             out["q_BH"] = np.nan
@@ -92,11 +103,14 @@ def _anova_stats(scores: pd.DataFrame, treatment_col: str) -> pd.DataFrame:
                 labels.append(lv)
         if len(groups) >= 2:
             F, p = f_oneway(*groups)
-            rows.append(dict(pathway=pw, k=len(groups), F=float(F), p=float(p), test="anova"))
+            rows.append(
+                dict(pathway=pw, k=len(groups), F=float(F), p=float(p), test="anova")
+            )
     out = pd.DataFrame(rows)
     if not out.empty:
         try:
             from statsmodels.stats.multitest import multipletests
+
             out["q_BH"] = multipletests(out["p"].to_numpy(), method="fdr_bh")[1]
         except Exception:
             out["q_BH"] = np.nan
@@ -129,7 +143,9 @@ def _tukey_posthoc(scores: pd.DataFrame, treatment_col: str) -> pd.DataFrame:
             tukey = pairwise_tukeyhsd(endog=vals, groups=groups, alpha=0.05)
         except Exception:
             continue
-        res = pd.DataFrame(data=tukey._results_table.data[1:], columns=tukey._results_table.data[0])
+        res = pd.DataFrame(
+            data=tukey._results_table.data[1:], columns=tukey._results_table.data[0]
+        )
         # Expected columns: group1, group2, meandiff, p-adj, lower, upper, reject
         res = res.rename(columns={"p-adj": "p_adj"})
         res.insert(0, "pathway", pw)
@@ -162,7 +178,11 @@ def make_bulk_pdf_report(
     if len(levels) == 2:
         if not control_label:
             control_label = _infer_control_label(levels)
-        stats = _welch_stats(scores_with_treatment, treatment_col="treatment", control_label=control_label)
+        stats = _welch_stats(
+            scores_with_treatment,
+            treatment_col="treatment",
+            control_label=control_label,
+        )
     elif len(levels) > 2:
         stats = _anova_stats(scores_with_treatment, treatment_col="treatment")
         # Tukey post-hoc for multi-group comparisons
@@ -181,33 +201,63 @@ def make_bulk_pdf_report(
             "Input: normalized gene×sample matrix (TPM/CPM/VST). Gene matching is case-insensitive; duplicates summed.\n"
             "If provided, treatment groups are used for summaries and Welch's t-test (case minus control)."
         )
-        text = (methods_note or default_note)
+        text = methods_note or default_note
         plt.text(0.05, 0.95, title, fontsize=16, va="top", ha="left", weight="bold")
         plt.text(0.05, 0.90, text, fontsize=11, va="top", ha="left")
         if not stats.empty:
             # Small stats preview
             if "test" in stats.columns and (stats["test"] == "anova").all():
-                cols = [c for c in ["pathway", "k", "F", "p", "q_BH"] if c in stats.columns]
+                cols = [
+                    c for c in ["pathway", "k", "F", "p", "q_BH"] if c in stats.columns
+                ]
             else:
-                cols = [c for c in ["pathway", "group_a", "group_b", "n_a", "n_b", "p", "q_BH", "hedges_g"] if c in stats.columns]
+                cols = [
+                    c
+                    for c in [
+                        "pathway",
+                        "group_a",
+                        "group_b",
+                        "n_a",
+                        "n_b",
+                        "p",
+                        "q_BH",
+                        "hedges_g",
+                    ]
+                    if c in stats.columns
+                ]
             prev = stats[cols].sort_values([cols[0]]).head(12)
             plt.text(0.05, 0.60, "Stats preview (top 12):", fontsize=12, weight="bold")
             ax = plt.axes([0.05, 0.15, 0.9, 0.40])
             ax.axis("off")
             ax.table(cellText=prev.values, colLabels=list(prev.columns), loc="center")
-        pdf.savefig(fig); plt.close(fig)
+        pdf.savefig(fig)
+        plt.close(fig)
 
         # Page 2: Scores table (wide)
         fig = plt.figure(figsize=(11, 8.5))
-        ax = plt.gca(); ax.axis("off")
+        ax = plt.gca()
+        ax.axis("off")
         ax.set_title("Scores (per sample) — wide table", fontsize=14, loc="left")
         # Limit the table rows to fit; if too many, show head and note
         max_rows = 30
-        show = tbl if len(tbl) <= max_rows else pd.concat([tbl.head(max_rows - 1), pd.DataFrame([["…"] * len(tbl.columns)], columns=tbl.columns)])
-        the_table = ax.table(cellText=show.values, colLabels=list(show.columns), loc="center")
-        the_table.auto_set_font_size(False); the_table.set_fontsize(8)
+        show = (
+            tbl
+            if len(tbl) <= max_rows
+            else pd.concat(
+                [
+                    tbl.head(max_rows - 1),
+                    pd.DataFrame([["…"] * len(tbl.columns)], columns=tbl.columns),
+                ]
+            )
+        )
+        the_table = ax.table(
+            cellText=show.values, colLabels=list(show.columns), loc="center"
+        )
+        the_table.auto_set_font_size(False)
+        the_table.set_fontsize(8)
         the_table.scale(1, 1.2)
-        pdf.savefig(fig); plt.close(fig)
+        pdf.savefig(fig)
+        plt.close(fig)
 
         # Pages: Bar plots per pathway
         pws = list(scores_with_treatment["pathway"].unique())
@@ -219,13 +269,31 @@ def make_bulk_pdf_report(
             if style == "box":
                 # Boxplot with jitter
                 import seaborn as sns  # seaborn improves boxplots if available
+
                 try:
-                    sns.boxplot(data=sub, x="treatment", y="score_w", ax=ax, color="#DDDDDD")
-                    sns.stripplot(data=sub, x="treatment", y="score_w", ax=ax, color="#4C78A8", size=5, jitter=0.2)
+                    sns.boxplot(
+                        data=sub, x="treatment", y="score_w", ax=ax, color="#DDDDDD"
+                    )
+                    sns.stripplot(
+                        data=sub,
+                        x="treatment",
+                        y="score_w",
+                        ax=ax,
+                        color="#4C78A8",
+                        size=5,
+                        jitter=0.2,
+                    )
                 except Exception:
                     # Fallback to matplotlib
-                    labels = list(gs["treatment"]) if not gs.empty else sorted(sub["treatment"].dropna().unique())
-                    data = [sub.loc[sub["treatment"] == t, "score_w"].to_numpy() for t in labels]
+                    labels = (
+                        list(gs["treatment"])
+                        if not gs.empty
+                        else sorted(sub["treatment"].dropna().unique())
+                    )
+                    data = [
+                        sub.loc[sub["treatment"] == t, "score_w"].to_numpy()
+                        for t in labels
+                    ]
                     ax.boxplot(data, labels=labels)
             else:
                 # bars with sem error bars
@@ -249,18 +317,31 @@ def make_bulk_pdf_report(
                     txt = f"Welch t-test p={p:.3g}"
                 if np.isfinite(q):
                     txt += f", q={q:.3g}"
-                ax.text(0.98, 0.92, txt, transform=ax.transAxes, ha="right", va="top", fontsize=10,
-                        bbox=dict(boxstyle="round", facecolor="white", alpha=0.6))
-            pdf.savefig(fig); plt.close(fig)
+                ax.text(
+                    0.98,
+                    0.92,
+                    txt,
+                    transform=ax.transAxes,
+                    ha="right",
+                    va="top",
+                    fontsize=10,
+                    bbox=dict(boxstyle="round", facecolor="white", alpha=0.6),
+                )
+            pdf.savefig(fig)
+            plt.close(fig)
 
     # Save auxiliary CSVs next to PDF for programmatic access
     base = os.path.dirname(output_pdf_path) or "."
-    _as_wide_table(scores_with_treatment).to_csv(os.path.join(base, "scores_bulk_wide.csv"), index=False)
+    _as_wide_table(scores_with_treatment).to_csv(
+        os.path.join(base, "scores_bulk_wide.csv"), index=False
+    )
     gs = _compute_group_stats(scores_with_treatment, "treatment")
     gs.to_csv(os.path.join(base, "scores_bulk_by_treatment.csv"), index=False)
     # Wide by treatment (means only)
     wide_trt = gs.pivot_table(index="treatment", columns="pathway", values="mean")
-    wide_trt.reset_index().to_csv(os.path.join(base, "scores_bulk_by_treatment_wide.csv"), index=False)
+    wide_trt.reset_index().to_csv(
+        os.path.join(base, "scores_bulk_by_treatment_wide.csv"), index=False
+    )
     # Persist whichever stats were computed
     st = stats.copy()
     st.to_csv(os.path.join(base, "stats_bulk.csv"), index=False)

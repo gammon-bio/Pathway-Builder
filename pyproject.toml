@@ -71,3 +71,6 @@ packages = ["pathway_builder"]
 
 [tool.pytest.ini_options]
 addopts = "--cov-fail-under=75"
+
+[tool.isort]
+profile = "black"

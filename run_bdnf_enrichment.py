@@ -38,7 +38,6 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 import numpy as np
 import pandas as pd
 
-
 # ----------------------------- Utilities ------------------------------------
 
 
@@ -65,7 +64,9 @@ def _collapse_duplicates_sum(df: pd.DataFrame, gene_col: str) -> pd.DataFrame:
     agg = df2.groupby("__key", as_index=False, sort=False)[num_cols].sum()
     # map back representative gene symbol (first seen)
     first_map = (
-        df2.drop_duplicates("__key")["__key"].reset_index(drop=True).to_frame()
+        df2.drop_duplicates("__key")["__key"]
+        .reset_index(drop=True)
+        .to_frame()
         .assign(symbol=df2.drop_duplicates("__key")[gene_col].values)
     )
     rep = {k: v for k, v in zip(first_map["__key"], first_map["symbol"])}
@@ -74,7 +75,9 @@ def _collapse_duplicates_sum(df: pd.DataFrame, gene_col: str) -> pd.DataFrame:
     return agg[cols]
 
 
-def _normalize_weights_present(pw_df: pd.DataFrame, present_genes: Iterable[str]) -> pd.DataFrame:
+def _normalize_weights_present(
+    pw_df: pd.DataFrame, present_genes: Iterable[str]
+) -> pd.DataFrame:
     if pw_df.empty:
         return pw_df
     gset = {g.lower() for g in present_genes}
@@ -99,7 +102,8 @@ def _read_pathway_csv(path: str) -> pd.DataFrame:
         df["weight"] = 1.0
         wcol = "weight"
     out = (
-        df[[gcol, wcol]].rename(columns={gcol: "gene", wcol: "weight"})
+        df[[gcol, wcol]]
+        .rename(columns={gcol: "gene", wcol: "weight"})
         .assign(gene=lambda d: d["gene"].astype(str).str.strip())
     )
     # Coerce weights
@@ -120,7 +124,8 @@ def _infer_control_label(levels: Sequence[str]) -> Optional[str]:
 
 
 def _safe_log(msg: str) -> None:
-    sys.stderr.write(msg + "\n"); sys.stderr.flush()
+    sys.stderr.write(msg + "\n")
+    sys.stderr.flush()
 
 
 def _sanitize_label(label: str) -> str:
@@ -132,6 +137,7 @@ def _sanitize_label(label: str) -> str:
 
 def _import_scanpy_if_needed():
     import importlib
+
     sc = importlib.import_module("scanpy")
     ad = importlib.import_module("anndata")
     return sc, ad
@@ -154,7 +160,11 @@ def _read_10x_mtx(path: str):
     A = sc.read_10x_mtx(mdir, var_names="gene_symbols", make_unique=False)
     # Enforce RNA only if feature_types present
     if "feature_types" in A.var.columns:
-        keep = A.var["feature_types"].astype(str).str.contains("Gene Expression", case=False, regex=False)
+        keep = (
+            A.var["feature_types"]
+            .astype(str)
+            .str.contains("Gene Expression", case=False, regex=False)
+        )
         try:
             A = A[:, keep].copy()
         except Exception:
@@ -176,8 +186,10 @@ def _collapse_adata_duplicates_sum(adata) -> any:
     if n_groups == adata.n_vars:
         return adata
     # Build mapping matrix (n_vars x n_groups)
-    M = _sp.csr_matrix((_np.ones(adata.n_vars, dtype=_np.float32),
-                        (_np.arange(adata.n_vars), codes)), shape=(adata.n_vars, n_groups))
+    M = _sp.csr_matrix(
+        (_np.ones(adata.n_vars, dtype=_np.float32), (_np.arange(adata.n_vars), codes)),
+        shape=(adata.n_vars, n_groups),
+    )
     # Multiply X (n_obs x n_vars) by M to sum duplicate columns
     if _sp.issparse(adata.X):
         X_new = adata.X.dot(M).tocsr()
@@ -218,12 +230,16 @@ def _annotate_celltypes_simple(adata) -> None:
     for ct, genes in markers.items():
         g = [g for g in genes if g in adata.var_names]
         if len(g) >= 2:
-            sc.tl.score_genes(adata, gene_list=g, score_name=f"__score_{ct}", use_raw=False)
+            sc.tl.score_genes(
+                adata, gene_list=g, score_name=f"__score_{ct}", use_raw=False
+            )
             scores[ct] = f"__score_{ct}"
     score_cols = [v for v in scores.values() if v in adata.obs.columns]
     if score_cols:
         adata.obs["celltype_guess"] = (
-            adata.obs[score_cols].idxmax(axis=1).str.replace("__score_", "", regex=False)
+            adata.obs[score_cols]
+            .idxmax(axis=1)
+            .str.replace("__score_", "", regex=False)
         )
     else:
         adata.obs["celltype_guess"] = "Unknown"
@@ -252,12 +268,18 @@ def load_singlecell(sn_data: str) -> any:
         elif p.lower().endswith(".h5ad"):
             A = sc.read_h5ad(p)
         elif p.lower().endswith(".rds"):
-            raise RuntimeError("Seurat .rds import not supported in this CLI. Please convert to .h5ad (SeuratDisk) and retry.")
+            raise RuntimeError(
+                "Seurat .rds import not supported in this CLI. Please convert to .h5ad (SeuratDisk) and retry."
+            )
         else:
             raise RuntimeError(f"Unsupported file: {p}")
         # Enforce RNA-only features if annotated
         if "feature_types" in getattr(A, "var", pd.DataFrame()).columns:
-            keep = A.var["feature_types"].astype(str).str.contains("Gene Expression", case=False, regex=False)
+            keep = (
+                A.var["feature_types"]
+                .astype(str)
+                .str.contains("Gene Expression", case=False, regex=False)
+            )
             try:
                 A = A[:, keep].copy()
             except Exception:
@@ -305,7 +327,9 @@ def score_singlecell(
     if celltype_col and celltype_col in adata.obs.columns:
         ctc = celltype_col
     else:
-        _safe_log("[info] --celltype_col not provided or missing; computing simple marker-based celltype_guess")
+        _safe_log(
+            "[info] --celltype_col not provided or missing; computing simple marker-based celltype_guess"
+        )
         _annotate_celltypes_simple(adata)
         ctc = "celltype_guess"
 
@@ -324,7 +348,9 @@ def score_singlecell(
     if not pathway_csvs:
         raise SystemExit("--pathway_csv required (one or more)")
     if labels and len(labels) != len(pathway_csvs):
-        _safe_log("[warn] Number of --label entries does not match --pathway_csv; using filenames as labels where missing.")
+        _safe_log(
+            "[warn] Number of --label entries does not match --pathway_csv; using filenames as labels where missing."
+        )
 
     label_list: List[str] = []
     pw_tables: List[pd.DataFrame] = []
@@ -342,6 +368,7 @@ def score_singlecell(
 
     # Compute cell-level scores per pathway
     from scipy import sparse as sp
+
     for lab, pw in zip(label_list, pw_tables):
         present = [var_map[g.lower()] for g in pw["gene"] if g.lower() in var_map]
         pw_norm = _normalize_weights_present(pw, present_genes=present)
@@ -365,10 +392,15 @@ def score_singlecell(
     # Summaries per celltype x condition
     score_cols = [c for c in adata.obs.columns if c.startswith("score_w__")]
     summary = (
-        adata.obs[[ctc, cond] + score_cols].groupby([ctc, cond], observed=False).agg(["mean", "count"])
+        adata.obs[[ctc, cond] + score_cols]
+        .groupby([ctc, cond], observed=False)
+        .agg(["mean", "count"])
     )
     # Flatten columns
-    summary.columns = ["__".join([a] + ([b] if isinstance(b, str) else list(b))) for a, b in summary.columns.values]
+    summary.columns = [
+        "__".join([a] + ([b] if isinstance(b, str) else list(b)))
+        for a, b in summary.columns.values
+    ]
     summary = summary.reset_index().rename(columns={ctc: "celltype", cond: "condition"})
     # Extract per-pathway mean and count
     rows = []
@@ -401,18 +433,23 @@ def score_singlecell(
     if len(cond_levels) == 2:
         ctrl = _infer_control_label(cond_levels) or sorted(cond_levels)[0]
         case = [x for x in cond_levels if x != ctrl][0]
-        piv = df_ct.pivot_table(index=["pathway", "celltype"], columns="condition", values="score_w")
+        piv = df_ct.pivot_table(
+            index=["pathway", "celltype"], columns="condition", values="score_w"
+        )
         piv["delta_case_minus_control"] = piv.get(case) - piv.get(ctrl)
         piv = piv.reset_index()[["pathway", "celltype", "delta_case_minus_control"]]
         piv.to_csv(deltas_path, index=False)
     else:
         # write empty placeholder for deterministic outputs
-        pd.DataFrame(columns=["pathway", "celltype", "delta_case_minus_control"]).to_csv(deltas_path, index=False)
+        pd.DataFrame(
+            columns=["pathway", "celltype", "delta_case_minus_control"]
+        ).to_csv(deltas_path, index=False)
 
     # Figures + optional PDF
     try:
         import matplotlib.pyplot as plt
         from matplotlib.backends.backend_pdf import PdfPages
+
         figdir = os.path.join(output_dir, "figs")
         _ensure_dir(figdir)
         pdf_path = os.path.join(output_dir, "report.pdf")
@@ -424,7 +461,13 @@ def score_singlecell(
             sub = sub.sort_values(["condition", "celltype"]) if not sub.empty else sub
             for cond_val in sub["condition"].unique():
                 ss = sub[sub["condition"] == cond_val]
-                plt.plot(ss["celltype"], ss["score_w"], marker="o", linestyle="-", label=str(cond_val))
+                plt.plot(
+                    ss["celltype"],
+                    ss["score_w"],
+                    marker="o",
+                    linestyle="-",
+                    label=str(cond_val),
+                )
             plt.xticks(rotation=45, ha="right")
             plt.ylabel("Weighted score (mean)")
             plt.title(f"{lab} signaling (weighted)")
@@ -433,19 +476,24 @@ def score_singlecell(
             png_path = os.path.join(figdir, f"{_sanitize_label(lab)}_grouped.png")
             plt.savefig(png_path, dpi=150)
             if pdf is not None:
-                pdf.savefig(); plt.close()
+                pdf.savefig()
+                plt.close()
             else:
                 plt.close()
         # Additional PDF pages: deltas (case - control) per pathway if exactly two conditions
         cond_levels_pdf = list(df_ct["condition"].dropna().unique())
         if len(cond_levels_pdf) == 2 and pdf is not None:
-            ctrl_pdf = _infer_control_label(cond_levels_pdf) or sorted(cond_levels_pdf)[0]
+            ctrl_pdf = (
+                _infer_control_label(cond_levels_pdf) or sorted(cond_levels_pdf)[0]
+            )
             case_pdf = [x for x in cond_levels_pdf if x != ctrl_pdf][0]
             for lab in label_list:
                 sub = df_ct[df_ct["pathway"] == lab]
                 if sub.empty:
                     continue
-                piv = sub.pivot_table(index="celltype", columns="condition", values="score_w")
+                piv = sub.pivot_table(
+                    index="celltype", columns="condition", values="score_w"
+                )
                 if ctrl_pdf in piv.columns and case_pdf in piv.columns:
                     delta = (piv[case_pdf] - piv[ctrl_pdf]).rename("delta")
                     plt.figure(figsize=(max(6, len(delta) * 0.5), 3.5))
@@ -454,7 +502,9 @@ def score_singlecell(
                     plt.xticks(rotation=45, ha="right")
                     plt.ylabel(f"Delta ({case_pdf} - {ctrl_pdf})")
                     plt.title(f"{lab} — delta by celltype")
-                    plt.tight_layout(); pdf.savefig(); plt.close()
+                    plt.tight_layout()
+                    pdf.savefig()
+                    plt.close()
         # Additional pages: per-pathway boxplots of cell-level scores by condition, faceted by celltype
         try:
             import seaborn as sns  # improves boxplots
@@ -468,7 +518,16 @@ def score_singlecell(
             plt.figure(figsize=(10, 6))
             if sns is not None:
                 sns.boxplot(data=cell_df, x="celltype", y=col, hue="condition")
-                sns.stripplot(data=cell_df, x="celltype", y=col, hue="condition", dodge=True, color="#222", size=2, alpha=0.4)
+                sns.stripplot(
+                    data=cell_df,
+                    x="celltype",
+                    y=col,
+                    hue="condition",
+                    dodge=True,
+                    color="#222",
+                    size=2,
+                    alpha=0.4,
+                )
                 # remove duplicate legends
                 handles, labels2 = plt.gca().get_legend_handles_labels()
                 if handles:
@@ -481,7 +540,9 @@ def score_singlecell(
                 xticks = []
                 for i, ct in enumerate(ct_list):
                     for j, cv in enumerate(cond_list):
-                        vals = cell_df[(cell_df["celltype"] == ct) & (cell_df["condition"] == cv)][col].to_numpy()
+                        vals = cell_df[
+                            (cell_df["celltype"] == ct) & (cell_df["condition"] == cv)
+                        ][col].to_numpy()
                         data.append(vals)
                         xticks.append(f"{ct}\n{cv}")
                 plt.boxplot(data, labels=xticks, notch=False)
@@ -490,7 +551,8 @@ def score_singlecell(
             plt.title(f"{lab} — cell-level scores by celltype/condition")
             plt.tight_layout()
             if pdf is not None:
-                pdf.savefig(); plt.close()
+                pdf.savefig()
+                plt.close()
             else:
                 plt.close()
         if pdf is not None:
@@ -503,27 +565,43 @@ def score_singlecell(
         tidy = df_ct.rename(columns={"score_w": "mean", "n_cells": "n"})[
             ["pathway", "celltype", "condition", "mean", "n"]
         ]
-        tidy.to_csv(os.path.join(output_dir, "scores_by_celltype_condition_tidy.csv"), index=False)
+        tidy.to_csv(
+            os.path.join(output_dir, "scores_by_celltype_condition_tidy.csv"),
+            index=False,
+        )
 
         import matplotlib.pyplot as plt
         from matplotlib.backends.backend_pdf import PdfPages
+
         # Grouped bars by condition
-        pdf_cmp = PdfPages(os.path.join(output_dir, "comparisons_by_celltype_condition.pdf"))
+        pdf_cmp = PdfPages(
+            os.path.join(output_dir, "comparisons_by_celltype_condition.pdf")
+        )
         for lab in df_ct["pathway"].unique():
             sub = df_ct[df_ct["pathway"] == lab]
-            piv = sub.pivot_table(index="celltype", columns="condition", values="score_w")
+            piv = sub.pivot_table(
+                index="celltype", columns="condition", values="score_w"
+            )
             piv = piv.sort_index()
             fig, ax = plt.subplots(figsize=(max(6, len(piv) * 0.5), 4))
             conds = list(piv.columns)
             width = 0.8 / max(1, len(conds))
             x = range(len(piv))
             for i, c in enumerate(conds):
-                ax.bar([xi + i * width for xi in x], piv[c].values, width=width, label=str(c))
+                ax.bar(
+                    [xi + i * width for xi in x],
+                    piv[c].values,
+                    width=width,
+                    label=str(c),
+                )
             ax.set_xticks([xi + (len(conds) - 1) * width / 2 for xi in x])
             ax.set_xticklabels(piv.index, rotation=45, ha="right")
             ax.set_ylabel("Score (mean)")
             ax.set_title(f"{lab}: mean by celltype and condition")
-            ax.legend(); fig.tight_layout(); pdf_cmp.savefig(fig); plt.close(fig)
+            ax.legend()
+            fig.tight_layout()
+            pdf_cmp.savefig(fig)
+            plt.close(fig)
         pdf_cmp.close()
 
         # Delta table and PDF
@@ -534,7 +612,9 @@ def score_singlecell(
             dels = []
             for lab in df_ct["pathway"].unique():
                 sub = df_ct[df_ct["pathway"] == lab]
-                piv = sub.pivot_table(index="celltype", columns="condition", values="score_w")
+                piv = sub.pivot_table(
+                    index="celltype", columns="condition", values="score_w"
+                )
                 d = (piv.get(case) - piv.get(ctrl)).rename("delta").reset_index()
                 d.insert(0, "pathway", lab)
                 dels.append(d)
@@ -549,7 +629,9 @@ def score_singlecell(
                 ax.set_ylabel(f"Delta ({case} - {ctrl})")
                 ax.set_title(f"{lab}: delta by celltype")
                 plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
-                fig.tight_layout(); pdf_delta.savefig(fig); plt.close(fig)
+                fig.tight_layout()
+                pdf_delta.savefig(fig)
+                plt.close(fig)
             pdf_delta.close()
     except Exception as e:
         _safe_log(f"[warn] additional comparisons failed: {e}")
@@ -569,7 +651,9 @@ def score_bulk(
         raise SystemExit("--bulk_counts must be .csv, .tsv, or .txt (genes x samples)")
     df = _read_delim(bulk_counts)
     if df.empty or df.shape[1] < 2:
-        raise SystemExit("Bulk counts table appears malformed: need gene column + at least 1 sample column")
+        raise SystemExit(
+            "Bulk counts table appears malformed: need gene column + at least 1 sample column"
+        )
 
     # Auto-detect gene column if not provided
     if gene_col is None:
@@ -593,7 +677,9 @@ def score_bulk(
     if not pathway_csvs:
         raise SystemExit("--pathway_csv required (one or more)")
     if labels and len(labels) != len(pathway_csvs):
-        _safe_log("[warn] Number of --label entries does not match --pathway_csv; using filenames as labels where missing.")
+        _safe_log(
+            "[warn] Number of --label entries does not match --pathway_csv; using filenames as labels where missing."
+        )
     label_list: List[str] = []
     pw_tables: List[pd.DataFrame] = []
     for i, p in enumerate(pathway_csvs):
@@ -637,22 +723,62 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     src = ap.add_argument_group("Inputs")
-    src.add_argument("--bulk_counts", help="Bulk normalized counts table (genes x samples; CSV/TSV)")
-    src.add_argument("--sn_data", help="Single-cell input: .h5ad, 10x .h5, 10x mtx dir, or a glob pattern")
-    src.add_argument("--pathway_csv", action="append", help="Pathway CSV(s) with columns [gene,weight]; can be repeated")
-    src.add_argument("--label", action="append", help="Label(s) for each pathway CSV; can be repeated; defaults to filename")
+    src.add_argument(
+        "--bulk_counts", help="Bulk normalized counts table (genes x samples; CSV/TSV)"
+    )
+    src.add_argument(
+        "--sn_data",
+        help="Single-cell input: .h5ad, 10x .h5, 10x mtx dir, or a glob pattern",
+    )
+    src.add_argument(
+        "--pathway_csv",
+        action="append",
+        help="Pathway CSV(s) with columns [gene,weight]; can be repeated",
+    )
+    src.add_argument(
+        "--label",
+        action="append",
+        help="Label(s) for each pathway CSV; can be repeated; defaults to filename",
+    )
 
     scg = ap.add_argument_group("Single-cell options")
-    scg.add_argument("--celltype_col", help="obs column for cell-type; default uses a simple marker-based guess if missing")
-    scg.add_argument("--condition_col", help="obs column for condition/case-control grouping")
-    scg.add_argument("--min_cells_per_group", type=int, default=20, help="Flag groups with fewer cells as small")
-    scg.add_argument("--no_pdf", action="store_true", help="Do not produce a PDF report; still writes PNGs")
-    scg.add_argument("--sample_info", help="CSV with sample-to-condition mapping (columns: sample, condition)")
-    scg.add_argument("--sample_col", default="sample", help="Column name in --sample_info for sample IDs")
-    scg.add_argument("--info_condition_col", default="condition", help="Column in --sample_info to use as condition label")
+    scg.add_argument(
+        "--celltype_col",
+        help="obs column for cell-type; default uses a simple marker-based guess if missing",
+    )
+    scg.add_argument(
+        "--condition_col", help="obs column for condition/case-control grouping"
+    )
+    scg.add_argument(
+        "--min_cells_per_group",
+        type=int,
+        default=20,
+        help="Flag groups with fewer cells as small",
+    )
+    scg.add_argument(
+        "--no_pdf",
+        action="store_true",
+        help="Do not produce a PDF report; still writes PNGs",
+    )
+    scg.add_argument(
+        "--sample_info",
+        help="CSV with sample-to-condition mapping (columns: sample, condition)",
+    )
+    scg.add_argument(
+        "--sample_col",
+        default="sample",
+        help="Column name in --sample_info for sample IDs",
+    )
+    scg.add_argument(
+        "--info_condition_col",
+        default="condition",
+        help="Column in --sample_info to use as condition label",
+    )
 
     bg = ap.add_argument_group("Bulk options")
-    bg.add_argument("--gene_col", help="Gene symbol column name in bulk table (auto-detected)")
+    bg.add_argument(
+        "--gene_col", help="Gene symbol column name in bulk table (auto-detected)"
+    )
 
     out = ap.add_argument_group("Outputs")
     out.add_argument("--output_dir", required=True, help="Directory to write outputs")
@@ -712,13 +838,19 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
                 scol = args.sample_col or "sample"
                 ccol = args.info_condition_col or "condition"
                 if scol in sinfo.columns and ccol in sinfo.columns:
-                    m = sinfo[[scol, ccol]].rename(columns={scol: "sample", ccol: "__info_condition"})
+                    m = sinfo[[scol, ccol]].rename(
+                        columns={scol: "sample", ccol: "__info_condition"}
+                    )
                     adata.obs = adata.obs.merge(m, on="sample", how="left")
                     if "__info_condition" in adata.obs.columns:
-                        adata.obs["condition"] = adata.obs["__info_condition"].fillna(adata.obs.get("condition", "All"))
+                        adata.obs["condition"] = adata.obs["__info_condition"].fillna(
+                            adata.obs.get("condition", "All")
+                        )
                         adata.obs.drop(columns=["__info_condition"], inplace=True)
                 else:
-                    _safe_log(f"[warn] --sample_info missing required columns: {scol} and/or {ccol}")
+                    _safe_log(
+                        f"[warn] --sample_info missing required columns: {scol} and/or {ccol}"
+                    )
             except Exception as e:
                 _safe_log(f"[warn] failed to merge --sample_info: {e}")
         score_singlecell(

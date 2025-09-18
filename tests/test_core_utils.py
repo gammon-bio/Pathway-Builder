@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -22,7 +23,10 @@ def test_read_pathway_csv_merges_duplicates_and_preserves_evidence(tmp_path):
     # Duplicate weights summed, GeneB defaults to weight 1.0
     assert math.isclose(df.loc[df["gene"] == "GeneA", "weight"].iloc[0], 1.0)
     assert math.isclose(df.loc[df["gene"] == "GeneB", "weight"].iloc[0], 1.0)
-    assert df.loc[df["gene"] == "GeneA", "evidence_source"].iloc[0] in {"KEGG", "Reactome"}
+    assert df.loc[df["gene"] == "GeneA", "evidence_source"].iloc[0] in {
+        "KEGG",
+        "Reactome",
+    }
 
 
 def test_normalize_weights_present_filters_and_normalizes():

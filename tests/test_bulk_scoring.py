@@ -1,4 +1,5 @@
 import os
+
 import pandas as pd
 
 from pathway_builder.core import score_bulk_from_table
@@ -31,4 +32,3 @@ def test_bulk_weighted_scoring_simple(tmp_path):
     assert list(out["sample"]) == ["Sample1", "Sample2"]
     assert out.loc[0, "score_w"] == 20.0
     assert out.loc[1, "score_w"] == 5.0
-
