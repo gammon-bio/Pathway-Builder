@@ -63,6 +63,7 @@ bulk:
 	  --scoring_style "$(SCORING_STYLE)" \
 	  --collapse_duplicates "$(COLLAPSE)" \
 	  --report_style "$(REPORT_STYLE)" \
+	  $(if $(NO_PDF),--no_pdf,) \
 	  --output_dir "$(OUT)"
 
 toy-bulk:
@@ -72,9 +73,10 @@ toy-bulk:
 	  LABELS='TOY' \
 	  SAMPLE_INFO=data/toy_sample_info.csv \
 	  OUT=out/toy-bulk \
-	  SCORING_STYLE=r \
+	  SCORING_STYLE=simple \
 	  COLLAPSE=mean \
-	  REPORT_STYLE=box
+	  REPORT_STYLE=box \
+	  NO_PDF=1
 
 check:
 	@if [ -z "$(OUT)" ]; then echo "Usage: make check OUT=out/my_run"; exit 2; fi
