@@ -40,7 +40,7 @@
 
 - Bulk (genes x samples table)
   - Install extras: `pip install -e '.[dev]'`
-  - Toy example: `make toy-bulk` (writes to `out/toy-bulk`)
+  - Toy example: `make toy-bulk` (writes to `out/toy-bulk`; validates required deps)
   - Validate outputs: `make check OUT=out/toy-bulk`
   - Quick lint/type sweep: `black --check . && isort --check . && flake8 . && mypy .`
 

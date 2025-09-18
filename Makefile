@@ -54,6 +54,7 @@ bulk:
 		exit 2; \
 	fi
 	mkdir -p "$(OUT)"
+	@python3 scripts/check_smoke_deps.py
 	$(CLI) \
 	  --bulk_counts "$(COUNTS)" \
 	  $(call map_pathways) \

@@ -12,7 +12,7 @@ Thanks for your interest in improving Pathway Builder! A few guidelines:
 
 - Install dev dependencies: `pip install -e '.[dev]'` (quote extras in zsh to avoid glob expansion)
 - Optional: add single-cell extras with `make setup-sc`
-- Run the bundled smoke test once: `make toy-bulk`
+- Run the bundled smoke test once: `make toy-bulk` (after installing `.[dev]` extras)
 
 ## Local testing
 
