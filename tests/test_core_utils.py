@@ -69,7 +69,7 @@ def test_load_vst_counts_table_duplicate_handling():
 
     maxvar = core.load_vst_counts_table(df, collapse="maxvar")
     # The second row has higher variance, so it should be kept
-    assert math.isclose(maxvar.loc["A", "sample1"], 5.0)
+    assert math.isclose(float(maxvar.loc["A", "sample1"]), 5.0)
 
     try:
         core.load_vst_counts_table(df, collapse="unknown")
