@@ -62,4 +62,4 @@ Repository = "https://github.com/gammon-bio/Pathway-Builder"
 packages = ["pathway_builder"]
 
 [tool.pytest.ini_options]
-addopts = "--cov-fail-under=70"
+addopts = "--cov-fail-under=75"
