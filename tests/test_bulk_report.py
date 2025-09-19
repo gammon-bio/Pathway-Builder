@@ -1,4 +1,5 @@
 import os
+
 import pandas as pd
 
 from pathway_builder.core import score_bulk_from_table
@@ -20,9 +21,16 @@ def test_bulk_pdf_report(tmp_path):
     pw_path = tmp_path / "pw.csv"
     pw.to_csv(pw_path, index=False)
 
-    scores = score_bulk_from_table(df, gene_col=None, pathway_csvs=[str(pw_path)], labels=["PW"])
+    scores = score_bulk_from_table(
+        df, gene_col=None, pathway_csvs=[str(pw_path)], labels=["PW"]
+    )
     # Attach sample info
-    si = pd.DataFrame({"sample": ["S1", "S2", "S3", "S4"], "treatment": ["Ctrl", "Ctrl", "Case", "Case"]})
+    si = pd.DataFrame(
+        {
+            "sample": ["S1", "S2", "S3", "S4"],
+            "treatment": ["Ctrl", "Ctrl", "Case", "Case"],
+        }
+    )
     scores = scores.merge(si, on="sample", how="left")
 
     pdf_path = tmp_path / "rep.pdf"
@@ -36,6 +44,7 @@ def test_bulk_pdf_report(tmp_path):
 
 def test_bulk_anova_stats(tmp_path):
     import numpy as np
+
     # 3 groups with different means
     df = pd.DataFrame(
         {
@@ -50,11 +59,15 @@ def test_bulk_anova_stats(tmp_path):
     pw = pd.DataFrame({"gene": ["A", "B"], "weight": [1.0, 1.0]})
     pw_path = tmp_path / "pw.csv"
     pw.to_csv(pw_path, index=False)
-    scores = score_bulk_from_table(df, gene_col=None, pathway_csvs=[str(pw_path)], labels=["PW"])
-    si = pd.DataFrame({
-        "sample": ["C1", "C2", "T1", "T2", "T3"],
-        "treatment": ["Control", "Control", "TreatA", "TreatA", "TreatB"],
-    })
+    scores = score_bulk_from_table(
+        df, gene_col=None, pathway_csvs=[str(pw_path)], labels=["PW"]
+    )
+    si = pd.DataFrame(
+        {
+            "sample": ["C1", "C2", "T1", "T2", "T3"],
+            "treatment": ["Control", "Control", "TreatA", "TreatA", "TreatB"],
+        }
+    )
     scores = scores.merge(si, on="sample", how="left")
     pdf_path = tmp_path / "rep.pdf"
     make_bulk_pdf_report(scores_with_treatment=scores, output_pdf_path=str(pdf_path))
@@ -64,4 +77,6 @@ def test_bulk_anova_stats(tmp_path):
     assert float(stats.loc[0, "p"]) >= 0.0
     tuk = pd.read_csv(tmp_path / "stats_bulk_tukey.csv")
     assert not tuk.empty
-    assert set(["pathway", "group1", "group2", "meandiff", "p_adj"]).issubset(tuk.columns)
+    assert set(["pathway", "group1", "group2", "meandiff", "p_adj"]).issubset(
+        tuk.columns
+    )

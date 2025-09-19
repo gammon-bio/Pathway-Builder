@@ -52,7 +52,13 @@ def read_pathway_csv(path: str) -> pd.DataFrame:
     cols = [gcol, wcol] + ([evcol] if evcol else [])
     out = (
         df[cols]
-        .rename(columns={gcol: "gene", wcol: "weight", (evcol or "evidence_source"): "evidence_source"})
+        .rename(
+            columns={
+                gcol: "gene",
+                wcol: "weight",
+                (evcol or "evidence_source"): "evidence_source",
+            }
+        )
         .assign(gene=lambda d: d["gene"].astype(str).str.strip())
     )
     out["weight"] = pd.to_numeric(out["weight"], errors="coerce").fillna(1.0)
@@ -63,7 +69,9 @@ def read_pathway_csv(path: str) -> pd.DataFrame:
     return out[[c for c in ("gene", "weight", "evidence_source") if c in out.columns]]
 
 
-def normalize_weights_present(pw_df: pd.DataFrame, present_genes: Iterable[str]) -> pd.DataFrame:
+def normalize_weights_present(
+    pw_df: pd.DataFrame, present_genes: Iterable[str]
+) -> pd.DataFrame:
     if pw_df.empty:
         return pw_df
     gset = {g.lower() for g in present_genes}
@@ -87,7 +95,9 @@ def load_vst_counts_table(
     collapse: one of mean, maxvar, median, sum
     """
     if counts_table.empty or counts_table.shape[1] < 2:
-        raise ValueError("counts_table malformed: need gene column + >=1 sample columns")
+        raise ValueError(
+            "counts_table malformed: need gene column + >=1 sample columns"
+        )
     df = counts_table.copy()
     if gene_col is None:
         candidates = [
@@ -103,7 +113,8 @@ def load_vst_counts_table(
         ]
         for c in candidates:
             if c in df.columns:
-                gene_col = c; break
+                gene_col = c
+                break
         if gene_col is None:
             gene_col = df.columns[0]
     genes = df[gene_col].astype(str)
@@ -127,6 +138,7 @@ def load_vst_counts_table(
                 return group.iloc[0]
             v = group.var(axis=1, ddof=1)
             return group.loc[v.idxmax()]
+
         out = mat.groupby(mat.index, group_keys=False).apply(pick_maxvar)
         return out
     else:
@@ -165,7 +177,11 @@ def score_bulk_r_style_from_table(
         labels = labels + [None] * (len(pathway_csvs) - len(labels))
     rows = []
     for i, p in enumerate(pathway_csvs):
-        lab = labels[i] if labels and i < len(labels) and labels[i] else os.path.splitext(os.path.basename(p))[0]
+        lab = (
+            labels[i]
+            if labels and i < len(labels) and labels[i]
+            else os.path.splitext(os.path.basename(p))[0]
+        )
         pw = read_pathway_csv(p)
         pw = _boost_weights_by_evidence(pw, boost=boost_by_evidence)
         # intersect with X rows
@@ -194,11 +210,15 @@ def score_bulk_from_table(
     labels: Optional[List[str]] = None,
 ) -> pd.DataFrame:
     if counts_table.empty or counts_table.shape[1] < 2:
-        raise ValueError("counts_table malformed: require gene column + >=1 sample column")
+        raise ValueError(
+            "counts_table malformed: require gene column + >=1 sample column"
+        )
     # detect gene column
     if gene_col is None:
         cols = {c.lower(): c for c in counts_table.columns}
-        gene_col = cols.get("gene") or cols.get("symbol") or list(counts_table.columns)[0]
+        gene_col = (
+            cols.get("gene") or cols.get("symbol") or list(counts_table.columns)[0]
+        )
     if gene_col not in counts_table.columns:
         raise ValueError(f"Gene column '{gene_col}' not found")
     df = counts_table.copy()
@@ -212,7 +232,11 @@ def score_bulk_from_table(
         labels = labels + [None] * (len(pathway_csvs) - len(labels))
     rows = []
     for i, p in enumerate(pathway_csvs):
-        lab = labels[i] if labels and i < len(labels) and labels[i] else os.path.splitext(os.path.basename(p))[0]
+        lab = (
+            labels[i]
+            if labels and i < len(labels) and labels[i]
+            else os.path.splitext(os.path.basename(p))[0]
+        )
         pw = read_pathway_csv(p)
         present = [gene_map[g.lower()] for g in pw["gene"] if g.lower() in gene_map]
         pw_norm = normalize_weights_present(pw, present_genes=present)
@@ -229,7 +253,9 @@ def score_bulk_from_table(
     return pd.DataFrame(rows)
 
 
-def welch_t_test(x: np.ndarray, y: np.ndarray) -> Tuple[float, float, float, float, float, float]:
+def welch_t_test(
+    x: np.ndarray, y: np.ndarray
+) -> Tuple[float, float, float, float, float, float]:
     """Return t, df, p, mean_diff, ci_low, ci_high for Welch's t-test (two-sided)."""
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
@@ -237,24 +263,36 @@ def welch_t_test(x: np.ndarray, y: np.ndarray) -> Tuple[float, float, float, flo
     y = y[np.isfinite(y)]
     nx, ny = len(x), len(y)
     if nx < 2 or ny < 2:
-        return float('nan'), float('nan'), float('nan'), float(np.nan), float(np.nan), float(np.nan)
+        return (
+            float("nan"),
+            float("nan"),
+            float("nan"),
+            float(np.nan),
+            float(np.nan),
+            float(np.nan),
+        )
     mx, my = float(np.mean(x)), float(np.mean(y))
     vx, vy = float(np.var(x, ddof=1)), float(np.var(y, ddof=1))
     se = np.sqrt(vx / nx + vy / ny)
     if se == 0:
-        return float('inf'), float('nan'), 0.0, mx - my, float('nan'), float('nan')
+        return float("inf"), float("nan"), 0.0, mx - my, float("nan"), float("nan")
     t = (mx - my) / se
-    df = (vx / nx + vy / ny) ** 2 / ((vx**2) / ((nx**2) * (nx - 1)) + (vy**2) / ((ny**2) * (ny - 1)))
+    df = (vx / nx + vy / ny) ** 2 / (
+        (vx**2) / ((nx**2) * (nx - 1)) + (vy**2) / ((ny**2) * (ny - 1))
+    )
     # two-sided p-value
     try:
         from scipy.stats import t as tdist
+
         p = 2 * tdist.sf(abs(t), df)
         # 95% CI for mean difference
         ql, qh = tdist.ppf([0.025, 0.975], df)
         ci_low = (mx - my) + ql * se
         ci_high = (mx - my) + qh * se
     except Exception:
-        p = float('nan'); ci_low = float('nan'); ci_high = float('nan')
+        p = float("nan")
+        ci_low = float("nan")
+        ci_high = float("nan")
     return float(t), float(df), float(p), float(mx - my), float(ci_low), float(ci_high)
 
 
@@ -265,12 +303,12 @@ def hedges_g(x: np.ndarray, y: np.ndarray) -> float:
     y = y[np.isfinite(y)]
     nx, ny = len(x), len(y)
     if nx < 2 or ny < 2:
-        return float('nan')
+        return float("nan")
     mx, my = float(np.mean(x)), float(np.mean(y))
     vx, vy = float(np.var(x, ddof=1)), float(np.var(y, ddof=1))
     s_pooled = np.sqrt(((nx - 1) * vx + (ny - 1) * vy) / (nx + ny - 2))
     if s_pooled == 0:
-        return float('inf')
+        return float("inf")
     d = (mx - my) / s_pooled
     J = 1 - (3 / (4 * (nx + ny) - 9))
     return float(d * J)
@@ -314,7 +352,11 @@ def load_singlecell(sn_data: str):  # -> anndata.AnnData
         if "gene_symbols" in A.var.columns:
             A.var_names = A.var["gene_symbols"].astype(str)
         if "feature_types" in getattr(A, "var", pd.DataFrame()).columns:
-            keep = A.var["feature_types"].astype(str).str.contains("Gene Expression", case=False, regex=False)
+            keep = (
+                A.var["feature_types"]
+                .astype(str)
+                .str.contains("Gene Expression", case=False, regex=False)
+            )
             try:
                 A = A[:, keep].copy()
             except Exception:
@@ -368,12 +410,17 @@ def score_singlecell_adata(
     label_list: List[str] = []
     pw_tables: List[pd.DataFrame] = []
     for i, p in enumerate(pathway_csvs):
-        lab = labels[i] if labels and i < len(labels) and labels[i] else os.path.splitext(os.path.basename(p))[0]
+        lab = (
+            labels[i]
+            if labels and i < len(labels) and labels[i]
+            else os.path.splitext(os.path.basename(p))[0]
+        )
         label_list.append(lab)
         pw_tables.append(read_pathway_csv(p))
 
     var_map = {v.lower(): v for v in adata.var_names}
     from scipy import sparse as sp
+
     for lab, pw in zip(label_list, pw_tables):
         present = [var_map[g.lower()] for g in pw["gene"] if g.lower() in var_map]
         pw_norm = normalize_weights_present(pw, present_genes=present)
@@ -394,6 +441,9 @@ def score_singlecell_adata(
 
     score_cols = [c for c in adata.obs.columns if c.startswith("score_w__")]
     summary = (
-        adata.obs[[ctc, cond] + score_cols].groupby([ctc, cond], observed=False).mean().reset_index()
+        adata.obs[[ctc, cond] + score_cols]
+        .groupby([ctc, cond], observed=False)
+        .mean()
+        .reset_index()
     )
     return summary

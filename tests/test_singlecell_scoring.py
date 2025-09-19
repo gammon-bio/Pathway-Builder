@@ -1,4 +1,5 @@
 import importlib
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -8,7 +9,7 @@ import pytest
 def test_singlecell_weighted_scoring_small(tmp_path):
     scanpy = pytest.importorskip("scanpy")
     anndata = importlib.import_module("anndata")
-    from pathway_builder.core import score_singlecell_adata, read_pathway_csv
+    from pathway_builder.core import read_pathway_csv, score_singlecell_adata
 
     # 3 cells x 3 genes, simple counts
     X = np.array(
@@ -20,7 +21,9 @@ def test_singlecell_weighted_scoring_small(tmp_path):
         dtype=float,
     )
     var = pd.DataFrame(index=["GeneA", "GeneB", "GeneC"])  # gene names
-    obs = pd.DataFrame(index=["c0", "c1", "c2"]).assign(celltype=["T1", "T1", "T2"])  # two groups
+    obs = pd.DataFrame(index=["c0", "c1", "c2"]).assign(
+        celltype=["T1", "T1", "T2"]
+    )  # two groups
     adata = anndata.AnnData(X=X, obs=obs, var=var)
 
     # Pathway favors GeneA only

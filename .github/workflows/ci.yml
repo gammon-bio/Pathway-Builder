@@ -10,6 +10,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: true
       matrix:
         python-version: [ '3.9', '3.10', '3.11', '3.12' ]
     steps:
@@ -20,11 +21,15 @@ jobs:
       - name: Install package + deps
         run: |
           python -m pip install --upgrade pip
-          pip install -e .[singlecell,report,test]
-      - name: Unit tests
-        run: pytest -q
+          pip install -e .[report,test]
       - name: Smoke test (toy bulk)
-        run: |
-          make setup
-          make toy-bulk
-          make check OUT=out/toy-bulk
+        run: make toy-bulk
+      - name: Unit tests with coverage
+        run: pytest --cov=pathway_builder --cov-report=xml:coverage.xml --cov-report=term-missing
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml
+          flags: unittests
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

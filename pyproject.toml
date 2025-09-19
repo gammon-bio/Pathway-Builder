@@ -40,6 +40,23 @@ report = [
 ]
 test = [
   "pytest>=7",
+  "pytest-cov>=4",
+]
+dev = [
+  "pytest>=7",
+  "pytest-cov>=4",
+  "matplotlib>=3.7",
+  "scipy>=1.9",
+  "statsmodels>=0.14",
+  "build>=1.0",
+  "black>=23",
+  "isort>=5",
+  "flake8>=6",
+  "mypy>=1.5",
+  "pip-audit>=2",
+  "bandit>=1.7",
+  "radon>=6",
+  "vulture>=2",
 ]
 
 [project.scripts]
@@ -51,3 +68,9 @@ Repository = "https://github.com/gammon-bio/Pathway-Builder"
 
 [tool.setuptools]
 packages = ["pathway_builder"]
+
+[tool.pytest.ini_options]
+addopts = "--cov-fail-under=75"
+
+[tool.isort]
+profile = "black"

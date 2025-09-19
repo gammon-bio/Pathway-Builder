@@ -23,7 +23,9 @@ def main() -> int:
     print(f"[ok] Cell-type summary: {n_ct} celltypes, {n_pw} pathways")
     # Show small pivot of means if plausible
     try:
-        piv = df.pivot_table(index=["celltype","condition"], columns="pathway", values="score_w")
+        piv = df.pivot_table(
+            index=["celltype", "condition"], columns="pathway", values="score_w"
+        )
         print("\nCelltype x condition means (head):")
         print(piv.head(10))
     except Exception:
@@ -49,4 +51,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

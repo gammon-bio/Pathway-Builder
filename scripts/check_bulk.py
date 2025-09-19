@@ -20,7 +20,10 @@ def main() -> int:
 
     scores = load("scores_bulk.csv")
     if scores.empty:
-        print(f"[error] {os.path.join(out, 'scores_bulk.csv')} not found or empty", file=sys.stderr)
+        print(
+            f"[error] {os.path.join(out, 'scores_bulk.csv')} not found or empty",
+            file=sys.stderr,
+        )
         return 2
     n_samp = scores["sample"].nunique()
     n_pw = scores["pathway"].nunique()
@@ -34,7 +37,11 @@ def main() -> int:
 
     stats = load("stats_bulk.csv")
     if not stats.empty:
-        cols = [c for c in ["pathway", "test", "p", "q_BH", "hedges_g", "F"] if c in stats.columns]
+        cols = [
+            c
+            for c in ["pathway", "test", "p", "q_BH", "hedges_g", "F"]
+            if c in stats.columns
+        ]
         if cols:
             print("\nStats (first 6 rows):")
             print(stats[cols].head(6))
@@ -43,11 +50,14 @@ def main() -> int:
     if os.path.exists(tk):
         tdf = pd.read_csv(tk)
         print(f"\nTukey pairs: {len(tdf)} rows (showing first 6)")
-        cols = [c for c in ["pathway", "group1", "group2", "meandiff", "p_adj"] if c in tdf.columns]
+        cols = [
+            c
+            for c in ["pathway", "group1", "group2", "meandiff", "p_adj"]
+            if c in tdf.columns
+        ]
         print(tdf[cols].head(6))
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

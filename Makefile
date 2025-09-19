@@ -2,7 +2,11 @@ SHELL := /bin/bash
 .ONESHELL:
 
 # Defaults (override on invocation)
-CLI ?= python3 -m pathway_builder.cli
+PYTHON ?= python3
+BULK_PY ?= $(PYTHON)
+SMOKE_VENV ?= .venv
+SMOKE_PY := $(SMOKE_VENV)/bin/python3
+CLI ?= $(BULK_PY) -m pathway_builder.cli
 SCORING_STYLE ?= r
 COLLAPSE ?= mean
 REPORT_STYLE ?= box
@@ -35,10 +39,10 @@ help:
 	@echo "  REPORT_STYLE=box|bar (default: box)"
 
 setup:
-	python3 -m pip install -e '.[report]'
+	$(PYTHON) -m pip install -e '.[report]'
 
 setup-sc:
-	python3 -m pip install -e '.[singlecell,report]'
+	$(PYTHON) -m pip install -e '.[singlecell,report]'
 
 # Helper to expand repeated flags for PATHWAYS and LABELS
 define map_pathways
@@ -54,6 +58,7 @@ bulk:
 		exit 2; \
 	fi
 	mkdir -p "$(OUT)"
+	@$(BULK_PY) scripts/check_smoke_deps.py
 	$(CLI) \
 	  --bulk_counts "$(COUNTS)" \
 	  $(call map_pathways) \
@@ -63,18 +68,29 @@ bulk:
 	  --scoring_style "$(SCORING_STYLE)" \
 	  --collapse_duplicates "$(COLLAPSE)" \
 	  --report_style "$(REPORT_STYLE)" \
+	  $(if $(NO_PDF),--no_pdf,) \
 	  --output_dir "$(OUT)"
 
-toy-bulk:
+$(SMOKE_PY):
+	$(PYTHON) -m venv $(SMOKE_VENV)
+	. $(SMOKE_VENV)/bin/activate
+	python3 -m pip install --upgrade pip
+	python3 -m pip install -e '.[dev]'
+
+toy-bulk: $(SMOKE_PY)
 	$(MAKE) bulk \
+	  PYTHON=$(SMOKE_PY) \
+	  BULK_PY=$(SMOKE_PY) \
+	  CLI='$(SMOKE_PY) -m pathway_builder.cli' \
 	  COUNTS=data/toy_bulk_counts.tsv \
 	  PATHWAYS='genes/toy_pathway.csv' \
 	  LABELS='TOY' \
 	  SAMPLE_INFO=data/toy_sample_info.csv \
 	  OUT=out/toy-bulk \
-	  SCORING_STYLE=r \
+	  SCORING_STYLE=simple \
 	  COLLAPSE=mean \
-	  REPORT_STYLE=box
+	  REPORT_STYLE=box \
+	  NO_PDF=1
 
 check:
 	@if [ -z "$(OUT)" ]; then echo "Usage: make check OUT=out/my_run"; exit 2; fi
